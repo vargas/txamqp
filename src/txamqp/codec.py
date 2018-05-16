@@ -197,19 +197,37 @@ class Codec(object):
     def decode_timestamp(self):
         return self.unpack("!Q")
 
+    def _write_value(self, value):
+        # Convert everything to binary representation (aka python3 string, and python2 unicode)
+        if isinstance(value, str) or (six.PY2 and isinstance(value, unicode)):
+            self.write(b"S")
+            self.encode_longstr(value)
+        elif value is None:
+            self.encode_void()
+        elif isinstance(value, list):
+            self.write(b'A')
+            self.encode_array(value)
+        else:
+            self.write(b"I")
+            self.encode_long(value)
+
+    # array
+    def encode_array(self, arr):
+        enc = BytesIO()
+        codec = Codec(enc)
+        for value in arr:
+            codec._write_value(value)
+        s = enc.getvalue()
+        self.encode_long(len(s))
+        self.write(s)
+
     # table
     def encode_table(self, tbl):
         enc = BytesIO()
         codec = Codec(enc)
         for key, value in tbl.items():
             codec.encode_shortstr(key)
-            # Convert everything to binary representation (aka python3 string, and python2 unicode)
-            if isinstance(value, str) or (six.PY2 and isinstance(value, unicode)):
-                codec.write(b"S")
-                codec.encode_longstr(value)
-            else:
-                codec.write(b"I")
-                codec.encode_long(value)
+            codec._write_value(value)
         s = enc.getvalue()
         self.encode_long(len(s))
         self.write(s)
@@ -233,6 +251,13 @@ class Codec(object):
                 raise ValueError(repr(item_type))
             result[key] = value
         return result
+
+    # void
+    def encode_void(self):
+        self.write(b"V")
+
+    def decode_void(self):
+        return None
 
 
 def test(field_type, value):
