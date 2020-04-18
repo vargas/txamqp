@@ -1,11 +1,22 @@
 sudo: false
-dist: trusty
 language: python
 python:
-  - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
+env:
+  - TXAMQP_BROKER=RABBITMQ
 services:
   - rabbitmq
-install: "pip install -r requirements.txt"
-script: "cd src; TXAMQP_BROKER=RABBITMQ trial txamqp"
+install: 
+  - pip install -r requirements.txt
+script: 
+  - python -m twisted.trial tests
+addons:
+  apt:
+    packages:
+    # Travis-ci migrated to Ubuntu Xenial as the default env.
+    # As described here https://blog.travis-ci.com/2019-04-15-xenial-default-build-environment
+    # Rabbitmq is no more provided out of the box, installed it manually:
+    - rabbitmq-server
