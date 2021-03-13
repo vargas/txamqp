@@ -1,1 +1,1 @@
-Twisted~=20.3.0
+twisted[tls] >=21.2.0, <22.0
